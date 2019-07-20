@@ -1,0 +1,41 @@
+# use R base repository from rocker hub
+# base image https://hub.docker.com/u/rocker/
+FROM r-base
+
+# set working dir to /usr/local/dockdir
+WORKDIR /usr/local/dockdir
+
+# create directories
+RUN mkdir -p ~/01_data
+RUN mkdir -p ~/01_data/args_list
+RUN mkdir -p ~/01_data/dob_xpaths_dfs
+RUN mkdir -p ~/01_data/docker_args_dfs
+RUN mkdir -p ~/02_code
+RUN mkdir -p ~/03_pgsource
+RUN mkdir -p ~/04_pgcontent
+RUN mkdir -p ~/05_pgss
+
+# copy input data dirs into dockdir
+COPY . ~/01_data/args_list
+COPY . ~/01_data/docker_args_dfs
+
+# copy R scripts into dir
+COPY . ~/02_code/install_packages.R
+COPY . ~/02_code/docker_autoscrollbot.R
+
+# make port 80 available to world outside this container
+EXPOSE 80
+
+# pull + run R selenium set up
+RUN docker pull rocker/r-base:latest
+RUN docker run rocker/r-base:latest
+
+# install necessary packages specified in install_packages.R
+RUN Rscript /usr/local/dockdir/02_code/install_packages.R
+
+# pull + run firefox selenium standalone ??
+RUN docker pull selenium/standalone-firefox
+RUN docker run -d -p 4445:4444 selenium/standalone-firefox
+
+# run R script when container launches
+CMD ["Rscript", "--vanilla", "docker_autoscrollbot.R", "january"]
